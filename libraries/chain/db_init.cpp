@@ -94,6 +94,9 @@ const uint8_t credit_object::type_id;
 const uint8_t exchange_rate_object::space_id;
 const uint8_t exchange_rate_object::type_id;
 
+const uint8_t account_history_of_karma_object::space_id;
+const uint8_t account_history_of_karma_object::type_id;
+
 const uint8_t asset_object::space_id;
 const uint8_t asset_object::type_id;
 
@@ -200,6 +203,7 @@ void database::initialize_indexes()
    add_index< primary_index<force_settlement_index> >();
    add_index< primary_index<credit_index> >();
    add_index< primary_index<exchange_rate_index> >();
+   add_index< primary_index<account_history_of_karma_index> >();
 
    auto acnt_index = add_index< primary_index<account_index> >();   
    acnt_index->add_secondary_index<account_member_index>();
@@ -412,6 +416,9 @@ void database::init_genesis(const genesis_state_type& genesis_state)
        // set extensions if not set yet
        chain_parameters::ext::credit_options new_credit_options = p.parameters.get_credit_options(); 
        p.parameters.set_credit_options(new_credit_options);
+       
+       chain_parameters::ext::credit_referrer_bonus_options new_bonus_options = p.parameters.get_bonus_options(); 
+       p.parameters.set_bonus_options(new_bonus_options);
 
    });
    create<dynamic_global_property_object>([&](dynamic_global_property_object& p) {

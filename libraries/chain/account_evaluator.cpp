@@ -36,6 +36,7 @@
 #include <graphene/chain/special_authority_object.hpp>
 #include <graphene/chain/witness_object.hpp>
 #include <graphene/chain/worker_object.hpp>
+#include <graphene/chain/credit_object.hpp>
 
 #include <algorithm>
 
@@ -187,6 +188,7 @@ object_id_type account_create_evaluator::do_apply( const account_create_operatio
          obj.registrar = o.registrar;
          obj.referrer = o.referrer;
          obj.lifetime_referrer = o.referrer(db()).lifetime_referrer;
+         obj.credit_referrer = obj.referrer;
 
          auto& params = db().get_global_properties().parameters;
          obj.network_fee_percentage = params.network_percent_of_fee;
@@ -198,6 +200,13 @@ object_id_type account_create_evaluator::do_apply( const account_create_operatio
          obj.active           = o.active;
          obj.options          = o.options;
          obj.statistics = db().create<account_statistics_object>([&](account_statistics_object& s){s.owner = obj.id;}).id;
+
+         //if(db().head_block_time() >= HARDFORK_CORE_KARMA_2)
+         db().create<account_history_of_karma_object>([&](account_history_of_karma_object& h)
+         {
+                  h.account = obj.id;
+                  h.add_history_entry(db().head_block_time(), KARMA_BONUS_FOR_ACCOUNT_CREATE, "Account created.");
+         });
 
          if( o.extensions.value.owner_special_authority.valid() )
             obj.owner_special_authority = *(o.extensions.value.owner_special_authority);

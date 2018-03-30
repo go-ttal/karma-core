@@ -2437,10 +2437,14 @@ public:
       const chain_parameters& current_params = get_global_properties().parameters;
       chain_parameters new_params = current_params;
       chain_parameters::ext::credit_options new_credit_options = new_params.get_credit_options();
+      chain_parameters::ext::credit_referrer_bonus_options new_bonus_options = new_params.get_bonus_options();
 
       // check extensions
       fc::reflector<chain_parameters::ext::credit_options>::visit(
             fc::from_variant_visitor<chain_parameters::ext::credit_options>( changed_values, new_credit_options )
+            );
+      fc::reflector<chain_parameters::ext::credit_referrer_bonus_options>::visit(
+            fc::from_variant_visitor<chain_parameters::ext::credit_referrer_bonus_options>( changed_values, new_bonus_options )
             );
 
       fc::reflector<chain_parameters>::visit(
@@ -2450,6 +2454,7 @@ public:
       committee_member_update_global_parameters_operation update_op;
       update_op.new_parameters = new_params;
       update_op.new_parameters.set_credit_options(new_credit_options);
+      update_op.new_parameters.set_bonus_options(new_bonus_options);
 
       proposal_create_operation prop_op;
 
@@ -2973,6 +2978,28 @@ vector<credit_object> wallet_api::fetch_credit_requests_stack( uint32_t from_ind
                                                           loan_volume_from, loan_volume_to, cyrrency_symbol, user_id, status );
 }
 
+vector<credit_object> wallet_api::fetch_credit_requests_stack_by_creditor( uint32_t from_index,
+                                                                      uint32_t elements_count,
+                                                                      uint32_t loan_persent_from,
+                                                                      uint32_t loan_persent_to,
+                                                                      uint32_t deposit_persent_from,
+                                                                      uint32_t deposit_persent_to,
+                                                                      uint32_t loan_volume_from,
+                                                                      uint32_t loan_volume_to,
+                                                                      std::string cyrrency_symbol,
+                                                                      std::string creditor_user_id,
+                                                                      uint32_t status
+                                                                    ) const
+{
+      return my->_remote_db->fetch_credit_requests_stack_by_creditor( from_index, elements_count, loan_persent_from, loan_persent_to, deposit_persent_from, deposit_persent_to,
+                                                          loan_volume_from, loan_volume_to, cyrrency_symbol, creditor_user_id, status );
+}
+
+
+std::vector<karma_history_entry> wallet_api::list_account_history_of_karma(std::string account_id) const
+{
+      return my->_remote_db->list_account_history_of_karma(account_id);
+}
 
 map<string, string> wallet_api::list_last_exchange_rates() const
 {

@@ -5,9 +5,6 @@
 #include <graphene/chain/hardfork.hpp>
 #include <fc/uint128.hpp>
 
-#define SECONDS_PER_DAY 86400
-#define SECONDS_PER_MONTH 2592000
-
 namespace graphene { namespace chain 
 {
     void credit_object::process( graphene::chain::database* db )
@@ -78,6 +75,8 @@ namespace graphene { namespace chain
         db->adjust_balance( borrower.borrower, -tmp );
         db->adjust_balance( creditor.creditor, tmp );
 
+        update_account_karma(db, borrower.borrower, KARMA_BONUS_FOR_MONTHLY_PAYMENT, "Settle monthly payment complete normal.");
+
         expired_time_start = 0;
 
         std::stringstream ss;
@@ -121,7 +120,9 @@ namespace graphene { namespace chain
             asset tmp( creditor.monthly_payment * pow(10, loan.precision), loan.get_id( ) ); 
          
             expired_time_start = db->head_block_time( ).sec_since_epoch( );
-                
+
+            update_account_karma(db, borrower.borrower, KARMA_PENALTY_FOR_MONTHLY_DELAY, "Settle monthly payment complete ubnormal: insufficient balance.");
+
             std::stringstream ss;
             std::string time_json = db->head_block_time( ).to_iso_string( );
             ss << time_json << " : " << "Settle monthly payment complete ubnormal: insufficient balance. " 
@@ -263,6 +264,8 @@ namespace graphene { namespace chain
         const asset_object& deposit = borrower.deposit_asset.asset_id( *db );
         db->adjust_balance( borrower.borrower, borrower.deposit_asset );
         
+        update_account_karma(db, borrower.borrower, KARMA_BONUS_FOR_CREDIT_PAYMENT, "Credit complete normal.");
+
         std::stringstream ss;
         std::string time_json = db->head_block_time( ).to_iso_string( );
         ss << time_json << " : " << "Credit complete normal, " << deposit.amount_to_pretty_string( borrower.deposit_asset ) << " returned.";
@@ -305,6 +308,8 @@ namespace graphene { namespace chain
 
         db->adjust_balance( borrower.borrower, -loan_asset_to_creditor );
         db->adjust_balance( creditor.creditor, loan_asset_to_creditor );
+
+        update_account_karma(db, borrower.borrower, KARMA_PENALTY_FOR_CREDIT_DEFAULT, "Credit complete ubnormal.");
 
         std::stringstream ss;
         std::string time_json = db->head_block_time( ).to_iso_string( );
