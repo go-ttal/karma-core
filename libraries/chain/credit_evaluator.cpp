@@ -364,6 +364,8 @@ object_id_type settle_credit_operation_evaluator::do_apply( const settle_credit_
                   const asset_object& deposit = b.borrower.deposit_asset.asset_id( d );
                   db( ).adjust_balance( b.borrower.borrower, b.borrower.deposit_asset );
         
+                  update_account_karma(&db(), b.borrower.borrower, KARMA_BONUS_FOR_CREDIT_PAYMENT, "Credit complete forced.");
+
                   std::stringstream ss;
                   std::string time_json = db( ).head_block_time( ).to_iso_string( );
                   ss << time_json << " : " << "Credit complete forced, " << deposit.amount_to_pretty_string( b.borrower.deposit_asset ) << " returned.";

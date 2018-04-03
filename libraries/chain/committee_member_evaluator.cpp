@@ -28,6 +28,7 @@
 #include <graphene/chain/protocol/fee_schedule.hpp>
 #include <graphene/chain/protocol/vote.hpp>
 #include <graphene/chain/transaction_evaluation_state.hpp>
+#include <graphene/chain/hardfork.hpp>
 
 #include <fc/smart_ref_impl.hpp>
 
@@ -76,6 +77,15 @@ void_result committee_member_update_evaluator::do_apply( const committee_member_
 void_result committee_member_update_global_parameters_evaluator::do_evaluate(const committee_member_update_global_parameters_operation& o)
 { try {
    FC_ASSERT(trx_state->_is_proposed_trx);
+
+   if( db().head_block_time() < HARDFORK_CORE_KARMA_2_TIME )
+   {
+      for( const auto& e : o.new_parameters.extensions )
+      {
+         FC_ASSERT( e.which() != chain_parameters::parameter_extension::tag<chain_parameters::ext::credit_referrer_bonus_options>::value,
+                    "Operation has an extension which requires hardfork HARDFORK_KARMA_CORE_2.");
+      }
+   }
 
    return void_result();
 } FC_CAPTURE_AND_RETHROW( (o) ) }

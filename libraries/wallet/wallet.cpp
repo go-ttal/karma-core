@@ -71,6 +71,7 @@
 #include <graphene/wallet/reflect_util.hpp>
 #include <graphene/debug_witness/debug_api.hpp>
 #include <fc/smart_ref_impl.hpp>
+#include <graphene/chain/hardfork.hpp>
 
 #ifndef WIN32
 # include <sys/types.h>
@@ -2439,13 +2440,26 @@ public:
       chain_parameters::ext::credit_options new_credit_options = new_params.get_credit_options();
       chain_parameters::ext::credit_referrer_bonus_options new_bonus_options = new_params.get_bonus_options();
 
-      // check extensions
+      // check credit options extensions
       fc::reflector<chain_parameters::ext::credit_options>::visit(
             fc::from_variant_visitor<chain_parameters::ext::credit_options>( changed_values, new_credit_options )
             );
-      fc::reflector<chain_parameters::ext::credit_referrer_bonus_options>::visit(
+
+      if( time_point_sec(time_point::now()) >= HARDFORK_CORE_KARMA_2_TIME )
+      {
+            // check bonus extensions
+            fc::reflector<chain_parameters::ext::credit_referrer_bonus_options>::visit(
             fc::from_variant_visitor<chain_parameters::ext::credit_referrer_bonus_options>( changed_values, new_bonus_options )
             );
+      }
+      else
+      {
+            for( chain_parameters::parameter_extension& e : new_params.extensions )
+            {
+                  if( e.which() == chain_parameters::parameter_extension::tag<chain_parameters::ext::credit_referrer_bonus_options>::value )
+                       new_params.extensions.erase(e);
+            }
+      }
 
       fc::reflector<chain_parameters>::visit(
          fc::from_variant_visitor<chain_parameters>( changed_values, new_params )
@@ -2454,7 +2468,11 @@ public:
       committee_member_update_global_parameters_operation update_op;
       update_op.new_parameters = new_params;
       update_op.new_parameters.set_credit_options(new_credit_options);
-      update_op.new_parameters.set_bonus_options(new_bonus_options);
+      
+      if( time_point_sec(time_point::now()) >= HARDFORK_CORE_KARMA_2_TIME )
+      {
+            update_op.new_parameters.set_bonus_options(new_bonus_options);
+      }
 
       proposal_create_operation prop_op;
 
